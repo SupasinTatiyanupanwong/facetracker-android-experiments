@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Face Tracker</string>
+
+    <string name="permission_camera_rationale">Access to the camera is needed for detection.</string>
 </resources>
