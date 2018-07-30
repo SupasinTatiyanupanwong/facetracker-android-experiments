@@ -1,5 +1,6 @@
 package me.tatiyanupanwong.supasin.android.apps.facetracker;
 
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -7,6 +8,8 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Switch;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -20,6 +23,7 @@ import java.io.IOException;
 
 import me.tatiyanupanwong.supasin.android.apps.facetracker.ui.camera.CameraSourcePreview;
 import me.tatiyanupanwong.supasin.android.apps.facetracker.ui.overlay.FaceGraphic;
+import me.tatiyanupanwong.supasin.android.apps.facetracker.ui.overlay.FrameGraphic;
 import me.tatiyanupanwong.supasin.android.apps.facetracker.ui.overlay.GraphicOverlay;
 
 import static android.Manifest.permission.CAMERA;
@@ -32,24 +36,45 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_GMS = 9001;
     private static final int REQUEST_CAMERA_PERMISSION = 2;
 
-    private CameraSource mCameraSource;
+    private ViewHolder mViews;
 
-    private CameraSourcePreview mPreview;
-    private GraphicOverlay mGraphicOverlay;
+    private CameraSource mCameraSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mPreview = findViewById(R.id.preview);
-        mGraphicOverlay = findViewById(R.id.faceOverlay);
+        mViews = new ViewHolder(this);
 
         if (ActivityCompat.checkSelfPermission(this, CAMERA) == PERMISSION_GRANTED) {
-            createCameraSource();
+            createCameraSource(CameraSource.CAMERA_FACING_BACK);
         } else {
             requestCameraPermission();
         }
+
+        mViews.buttonFlipCamera.setOnClickListener(view -> {
+            if (mCameraSource != null) {
+                if (mCameraSource.getCameraFacing() == CameraSource.CAMERA_FACING_FRONT) {
+                    mCameraSource.release();
+                    createCameraSource(CameraSource.CAMERA_FACING_BACK);
+                } else {
+                    mCameraSource.release();
+                    createCameraSource(CameraSource.CAMERA_FACING_FRONT);
+                }
+
+                startCameraSource();
+            }
+        });
+
+        final FrameGraphic frameGraphic = new FrameGraphic(mViews.overlays);
+        mViews.switchFrame.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                mViews.overlays.add(frameGraphic);
+            } else {
+                mViews.overlays.remove(frameGraphic);
+            }
+        });
     }
 
     private void requestCameraPermission() {
@@ -60,14 +85,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        Snackbar.make(mGraphicOverlay, R.string.permission_camera_rationale, LENGTH_INDEFINITE)
+        Snackbar.make(mViews.overlays, R.string.permission_camera_rationale, LENGTH_INDEFINITE)
                 .setAction(android.R.string.ok,
                         view -> ActivityCompat.requestPermissions(this, permissions,
                                 REQUEST_CAMERA_PERMISSION))
                 .show();
     }
 
-    private void createCameraSource() {
+    private void createCameraSource(int facing) {
         FaceDetector detector = new FaceDetector.Builder(this)
                 .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
                 .build();
@@ -90,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
 
         mCameraSource = new CameraSource.Builder(this, detector)
                 .setRequestedPreviewSize(640, 480)
-                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setFacing(facing)
                 .setRequestedFps(30.0f)
                 .build();
     }
@@ -104,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        mPreview.stop();
+        mViews.preview.stop();
     }
 
     @Override
@@ -124,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            createCameraSource();
+            createCameraSource(CameraSource.CAMERA_FACING_BACK);
             return;
         }
 
@@ -140,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (mCameraSource != null) {
             try {
-                mPreview.start(mCameraSource, mGraphicOverlay);
+                mViews.preview.start(mCameraSource, mViews.overlays);
             } catch (IOException e) {
                 Log.e(TAG, "Unable to start camera source.", e);
                 mCameraSource.release();
@@ -153,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
     private class GraphicFaceTrackerFactory implements MultiProcessor.Factory<Face> {
         @Override
         public Tracker<Face> create(Face face) {
-            return new GraphicFaceTracker(mGraphicOverlay);
+            return new GraphicFaceTracker(mViews.overlays);
         }
     }
 
@@ -200,6 +225,22 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDone() {
             mOverlay.remove(mFaceGraphic);
+        }
+    }
+
+    private static class ViewHolder {
+        final CameraSourcePreview preview;
+        final GraphicOverlay overlays;
+
+        final View buttonFlipCamera;
+
+        final Switch switchFrame;
+
+        ViewHolder(Activity activity) {
+            preview = activity.findViewById(R.id.preview);
+            overlays = activity.findViewById(R.id.face_overlay);
+            buttonFlipCamera = activity.findViewById(R.id.button_flip);
+            switchFrame = activity.findViewById(R.id.switch_frame);
         }
     }
 }

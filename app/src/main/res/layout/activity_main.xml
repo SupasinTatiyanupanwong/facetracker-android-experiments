@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:keepScreenOn="true">
+    android:clipChildren="false"
+    android:keepScreenOn="true"
+    tools:ignore="MergeRootFrame">
 
     <me.tatiyanupanwong.supasin.android.apps.facetracker.ui.camera.CameraSourcePreview
         android:id="@+id/preview"
@@ -11,10 +14,31 @@
         android:layout_height="match_parent">
 
         <me.tatiyanupanwong.supasin.android.apps.facetracker.ui.overlay.GraphicOverlay
-            android:id="@+id/faceOverlay"
+            android:id="@+id/face_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
     </me.tatiyanupanwong.supasin.android.apps.facetracker.ui.camera.CameraSourcePreview>
+
+    <Switch
+        android:id="@+id/switch_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:switchPadding="16dp"
+        android:text="Frame" />
+
+    <ImageView
+        android:id="@+id/button_flip"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="16dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_switch_photo_facing"
+        tools:ignore="ContentDescription" />
 
 </FrameLayout>
