@@ -100,8 +100,8 @@ public final class CameraSourceHelper {
             return;
         }
 
-        final View rootView = mActivity.getWindow().getDecorView().getRootView();
-        Snackbar.make(rootView, R.string.permission_camera_rationale, LENGTH_INDEFINITE)
+        final View contentView = mActivity.findViewById(android.R.id.content);
+        Snackbar.make(contentView, R.string.permission_camera_rationale, LENGTH_INDEFINITE)
                 .setAction(android.R.string.ok,
                         view -> ActivityCompat.requestPermissions(mActivity, permissions,
                                 REQUEST_CAMERA_PERMISSION))
